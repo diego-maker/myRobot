@@ -1,0 +1,24 @@
+{
+  "name": "myrobot",
+  "version": "1.0.0",
+  "description": "",
+  "main": "index.js",
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/diego-maker/myRobot.git"
+  },
+  "author": "diego",
+  "license": "ISC",
+  "bugs": {
+    "url": "https://github.com/diego-maker/myRobot/issues"
+  },
+  "homepage": "https://github.com/diego-maker/myRobot#readme",
+  "dependencies": {
+    "algorithmia": "^0.3.10",
+    "readline-sync": "^1.4.10",
+    "sbd": "^1.0.18"
+  }
+}
