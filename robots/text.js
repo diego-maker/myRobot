@@ -12,66 +12,103 @@ let nlu = new naturalLanguage({
 
 })
 
-nlu.analyze({
-    text:"hi my name is cristiano ronaldo, I like play soccer and drink beer ",
-    features:{
-        keywords:{}
-    }
-},(error, response) => {
-    if(error){
-        throw error
-    }
-    console.log(JSON.stringify(response, null, 4));
-    process.exit(0)
-})
 
 async function robot(content) {
-    await encontrarContentWikipedia(content)
-    limparContent(content)
-    quebrarContent(content)
-    async function encontrarContentWikipedia(content) {
-        const algorithmiaAuth = algorithmia(apiKeyAlgorithmia);
-        const algorithmiaWikipedia = algorithmiaAuth.algo('web/WikipediaParser/0.1.2')
-        const algorithmiaResponde = await algorithmiaWikipedia.pipe(content.termoDeBusca)
-        const wikipediaContent = algorithmiaResponde.get()
 
-        content.sourceOriginal = wikipediaContent.content
+  
+    await fetchContentFromWikipedia(content)
+    sanitizeContent(content)
+    breakContentIntoSentences(content)
+    limitMaximumSentences(content)
+    await fetchKeywordsOfAllSentences(content)
+  
+    
+  
+    async function fetchContentFromWikipedia(content) {
+      console.log('> [text-robot] Fetching content from Wikipedia')
+      const algorithmiaAuthenticated = algorithmia(apiKeyAlgorithmia)
+      const wikipediaAlgorithm = algorithmiaAuthenticated.algo('web/WikipediaParser/0.1.2')
+      const wikipediaResponse = await wikipediaAlgorithm.pipe(content.termoDeBusca)
+      const wikipediaContent = wikipediaResponse.get()
+  
+      content.sourceContentOriginal = wikipediaContent.content
+      console.log('> [text-robot] Fetching done!')
     }
-
-    function limparContent(content) {
-        const limparLinhasEmarkDown = removerLinhasEmarkDown(content.sourceOriginal)
-        const limparDatas = removeDatas(limparLinhasEmarkDown)
-        
-        content.sourceLimpa = limparDatas
-
-        function removerLinhasEmarkDown(text) {
-                const todasLinhas = text.split('\n');
-               
-                const limparLinhasEmarkDown = todasLinhas.filter((linha)=>{
-                    if(linha.trim().length === 0 || linha.trim().startsWith('=')){
-                        return false
-                    }
-                    return true
-                })
-                return limparLinhasEmarkDown.join(' ')
-        }
-    }
-    function removeDatas(text){
-     return  text.replace(/\((?:\([^()]*\)|[^()])*\)/gm, '').replace(/  /g,' ')
-    }
-
-  async  function quebrarContent(content){  
-     content.sentences = [] 
-    const sentences =  await sentencaSbd.sentences(content.sourceLimpa)
-        
-        sentences.forEach((sentence)=>{
-            content.sentences.push({
-                text:sentence,
-                keyWords: [],
-                images: []
-            })
+  
+    function sanitizeContent(content) {
+      const withoutBlankLinesAndMarkdown = removeBlankLinesAndMarkdown(content.sourceContentOriginal)
+      const withoutDatesInParentheses = removeDatesInParentheses(withoutBlankLinesAndMarkdown)
+  
+      content.sourceContentSanitized = withoutDatesInParentheses
+  
+      function removeBlankLinesAndMarkdown(text) {
+        const allLines = text.split('\n')
+  
+        const withoutBlankLinesAndMarkdown = allLines.filter((line) => {
+          if (line.trim().length === 0 || line.trim().startsWith('=')) {
+            return false
+          }
+  
+          return true
         })
-      
+  
+        return withoutBlankLinesAndMarkdown.join(' ')
+      }
+    }
+  
+    function removeDatesInParentheses(text) {
+      return text.replace(/\((?:\([^()]*\)|[^()])*\)/gm, '').replace(/  /g,' ')
+    }
+  
+    function breakContentIntoSentences(content) {
+      content.sentences = []
+  
+      const sentences = sentencaSbd.sentences(content.sourceContentSanitized)
+      sentences.forEach((sentence) => {
+        content.sentences.push({
+          text: sentence,
+          keywords: [],
+          images: []
+        })
+      })
+    }
+  
+    function limitMaximumSentences(content) {
+      content.sentences = content.sentences.slice(0, content.maximumSentences)
+    }
+  
+    async function fetchKeywordsOfAllSentences(content) {
+      console.log('> [text-robot] Starting to fetch keywords from Watson')
+  
+      for (const sentence of content.sentences) {
+        console.log(`> [text-robot] Sentence: "${sentence.text}"`)
+  
+        sentence.keywords = await fetchWatsonAndReturnKeywords(sentence.text)
+  
+        console.log(`> [text-robot] Keywords: ${sentence.keywords.join(', ')}\n`)
+      }
+    }
+  
+    async function fetchWatsonAndReturnKeywords(sentence) {
+      return new Promise((resolve, reject) => {
+        nlu.analyze({
+          text: sentence,
+          features: {
+            keywords: {}
+          }
+        }, (error, response) => {
+          if (error) {
+            reject(error)
+            return
+          }
+  
+          const keywords = response.keywords.map((keyword) => {
+            return keyword.text
+          })
+  
+          resolve(keywords)
+        })
+      })
     }
 }
 

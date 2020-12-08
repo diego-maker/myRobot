@@ -3,7 +3,9 @@ const robots ={
     text: require('./robots/text')
 }
 async function start(){
-    const content ={}
+    const content = {
+        maximumSentences: 7
+      }
 
     content.termoDeBusca = retorneOtermo()
     content.prefixo = retorneOprefixo();
