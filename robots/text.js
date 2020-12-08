@@ -13,6 +13,7 @@ let nlu = new naturalLanguage({
 })
 
  const state = require('./loadArq')
+ 
 async function robot() {
   const content = state.carregar();
   

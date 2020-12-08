@@ -9,7 +9,8 @@ function salvar(content){
 
 function carregar(){
     const file = fs.readFileSync(conteudoText, 'utf-8')
-    return conteudoText
+    const contenJson = JSON.parse(file)
+    return contenJson
 }
 
 
