@@ -18,33 +18,33 @@ async function robot(content) {
   
     await fetchContentFromWikipedia(content)
     sanitizeContent(content)
-    breakContentIntoSentences(content)
-    limitMaximumSentences(content)
-    await fetchKeywordsOfAllSentences(content)
+    quebrarEmSentencas(content)
+    limitarSentencas(content)
+    await buscarKeyDeTodasAsSentencas(content)
   
     
   
     async function fetchContentFromWikipedia(content) {
-      console.log('> [text-robot] Fetching content from Wikipedia')
+      console.log('> [text-robot] Proucurando conteudo no Wikipedia')
       const algorithmiaAuthenticated = algorithmia(apiKeyAlgorithmia)
       const wikipediaAlgorithm = algorithmiaAuthenticated.algo('web/WikipediaParser/0.1.2')
       const wikipediaResponse = await wikipediaAlgorithm.pipe(content.termoDeBusca)
       const wikipediaContent = wikipediaResponse.get()
   
-      content.sourceContentOriginal = wikipediaContent.content
+      content.conteudoOriginal = wikipediaContent.content
       console.log('> [text-robot] Fetching done!')
     }
   
     function sanitizeContent(content) {
-      const withoutBlankLinesAndMarkdown = removeBlankLinesAndMarkdown(content.sourceContentOriginal)
-      const withoutDatesInParentheses = removeDatesInParentheses(withoutBlankLinesAndMarkdown)
+      const removerLinhasEmarkDown = removeBlankLinesAndMarkdown(content.conteudoOriginal)
+      const dataFormatada = removeDatas(removerLinhasEmarkDown)
   
-      content.sourceContentSanitized = withoutDatesInParentheses
+      content.conteudoLimpo = dataFormatada
   
       function removeBlankLinesAndMarkdown(text) {
         const allLines = text.split('\n')
   
-        const withoutBlankLinesAndMarkdown = allLines.filter((line) => {
+        const removerLinhasEmarkDown = allLines.filter((line) => {
           if (line.trim().length === 0 || line.trim().startsWith('=')) {
             return false
           }
@@ -52,18 +52,18 @@ async function robot(content) {
           return true
         })
   
-        return withoutBlankLinesAndMarkdown.join(' ')
+        return removerLinhasEmarkDown.join(' ')
       }
     }
   
-    function removeDatesInParentheses(text) {
+    function removeDatas(text) {
       return text.replace(/\((?:\([^()]*\)|[^()])*\)/gm, '').replace(/  /g,' ')
     }
   
-    function breakContentIntoSentences(content) {
+    function quebrarEmSentencas(content) {
       content.sentences = []
   
-      const sentences = sentencaSbd.sentences(content.sourceContentSanitized)
+      const sentences = sentencaSbd.sentences(content.conteudoLimpo)
       sentences.forEach((sentence) => {
         content.sentences.push({
           text: sentence,
@@ -73,23 +73,20 @@ async function robot(content) {
       })
     }
   
-    function limitMaximumSentences(content) {
-      content.sentences = content.sentences.slice(0, content.maximumSentences)
+    function limitarSentencas(content) {
+      content.sentences = content.sentences.slice(0, content.maximoDeSentencas)
     }
   
-    async function fetchKeywordsOfAllSentences(content) {
-      console.log('> [text-robot] Starting to fetch keywords from Watson')
-  
+    async function buscarKeyDeTodasAsSentencas(content) {
+
       for (const sentence of content.sentences) {
-        console.log(`> [text-robot] Sentence: "${sentence.text}"`)
   
-        sentence.keywords = await fetchWatsonAndReturnKeywords(sentence.text)
+        sentence.keywords = await salvarErotornarKeys(sentence.text)
   
-        console.log(`> [text-robot] Keywords: ${sentence.keywords.join(', ')}\n`)
       }
     }
   
-    async function fetchWatsonAndReturnKeywords(sentence) {
+    async function salvarErotornarKeys(sentence) {
       return new Promise((resolve, reject) => {
         nlu.analyze({
           text: sentence,

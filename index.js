@@ -4,7 +4,7 @@ const robots ={
 }
 async function start(){
     const content = {
-        maximumSentences: 7
+        maximoDeSentencas: 7
       }
 
     content.termoDeBusca = retorneOtermo()
@@ -21,7 +21,7 @@ async function start(){
         const selecionarTexto = prefixos[selecionarPrefixo]
         return selecionarTexto
     }
-    console.log(content)
+    console.log(JSON.stringify(content, null, 4))
 }
 
 start();
