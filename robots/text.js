@@ -12,9 +12,9 @@ let nlu = new naturalLanguage({
 
 })
 
-
-async function robot(content) {
-
+ const state = require('./loadArq')
+async function robot() {
+  const content = state.carregar();
   
     await fetchContentFromWikipedia(content)
     sanitizeContent(content)
@@ -22,7 +22,7 @@ async function robot(content) {
     limitarSentencas(content)
     await buscarKeyDeTodasAsSentencas(content)
   
-    
+    state.salvar(content)
   
     async function fetchContentFromWikipedia(content) {
       console.log('> [text-robot] Proucurando conteudo no Wikipedia')
